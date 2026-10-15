@@ -1,172 +1,102 @@
-# 📦 Inventory Data Cleaning and Visualization using Python
+# Inventory Data Cleaning & Visualization with Python
 
-A Python data analytics project that connects directly to a **Microsoft SQL Server (SSMS)** database, extracts live inventory records with **Pandas**, cleans and transforms the data, and visualizes warehouse performance using **Matplotlib** and **Seaborn**.
+A data analytics project that connects to Microsoft SQL Server, loads inventory records into Pandas, cleans and transforms the data, and visualizes order and warehouse patterns.
 
-![Python](https://img.shields.io/badge/Python-3.x-blue)
-![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-150458)
-![Matplotlib](https://img.shields.io/badge/Matplotlib-Visualization-11557C)
-![Seaborn](https://img.shields.io/badge/Seaborn-Statistical%20Plots-4C72B0)
-![SQL Server](https://img.shields.io/badge/Database-SQL%20Server-CC2927)
+## Project Objective
 
----
+Explore inventory and order data to answer questions such as:
 
-## 📌 Project Overview
+- Which warehouses handle the largest order volumes?
+- How do stock levels compare with order demand?
+- Which product categories may need closer inventory attention?
+- How are orders distributed across warehouse locations and fulfillment statuses?
 
-This project analyzes inventory and order data for a multi-warehouse retail/e-commerce style operation. Instead of reading from a static file, the data is pulled **live from a SQL Server database** using `pyodbc`, giving the project a realistic, industry-style data pipeline: **Database → Python → Cleaned DataFrame → Visual Insights**.
+## Technology Stack
 
-The goal is to answer practical inventory-management questions:
-- Which warehouse is handling the most order volume?
-- Is stock availability keeping pace with order demand?
-- Are certain products consistently over- or under-stocked?
-
----
-
-## 🎯 Objective
-
-- Connect to a live SQL Server database from Python.
-- Extract the `Inventory` table into a Pandas DataFrame.
-- Clean the data (missing values, data types, category consistency).
-- Perform exploratory analysis and visualize warehouse/order/stock trends.
-- Turn raw operational data into insights that support inventory decisions.
-
----
-
-## 🛠️ Tech Stack
-
-| Technology | Purpose |
+| Technology | Use |
 |---|---|
-| **Python** | Core programming language for the entire pipeline |
-| **Jupyter Notebook** | Interactive environment for step-by-step analysis |
-| **pyodbc** | Connects Python to the SQL Server database via ODBC driver |
-| **Pandas** | Data extraction (`read_sql`), cleaning, and transformation |
-| **Matplotlib** | Base plotting engine — figure sizing, titles, axis labels |
-| **Seaborn** | Statistical visualizations (bar plots, heatmaps, scatter plots) |
-| **Microsoft SQL Server (SSMS)** | Source database storing the raw `Inventory` table |
+| Python | Analysis workflow |
+| Pandas | Data extraction, cleaning, and transformation |
+| pyodbc | SQL Server connectivity |
+| Microsoft SQL Server / SSMS | Data storage and querying |
+| Matplotlib | Plot construction and formatting |
+| Seaborn | Statistical and comparative visualizations |
+| Jupyter Notebook | Interactive analysis |
 
----
+## Data
 
-## 🗄️ Data Source
+The inventory table contains **120 order records across 7 columns**: `Order_ID`, `Date_order`, `Product_Name`, `Stock`, `Orders`, `Status_Order`, and `Warehouse`.
 
-Unlike typical portfolio projects that read a CSV, this project queries a **live database**:
+The repository also includes `inv.csv`, a portable snapshot of the data for review and adaptation.
+
+## Data Quality & Preparation
+
+The notebook demonstrates steps such as:
+
+- Inspecting data types and missing values
+- Handling missing `Stock` and `Orders` values
+- Checking for duplicate rows
+- Converting order dates to datetime values
+- Standardizing warehouse labels
+- Reviewing descriptive statistics before visualization
+
+In the included dataset, the initial checks identified 7 missing `Stock` values, 6 missing `Orders` values, and no duplicate rows. The cleaning choices are documented in the notebook and should be assessed in the context of the analysis.
+
+## Visual Analysis
+
+The notebook includes visualizations for:
+
+1. Total orders by warehouse
+2. Relationship between stock and orders
+3. Stock/order comparisons grouped by warehouse
+4. Share of order volume by warehouse
+
+These visuals are intended to connect the data preparation process to operational questions, rather than display charts without context.
+
+## How to Run
+
+### Option A — Connect to SQL Server
+
+1. Install Python and Jupyter Notebook.
+2. Install the required Python packages:
+
+   ```bash
+   pip install pandas matplotlib seaborn pyodbc
+   ```
+
+3. Ensure SQL Server contains an `Inventory` table with the expected columns.
+4. Open `Project.ipynb`.
+5. Update the notebook's SQL Server connection settings for your own environment (ODBC driver, server, database, and authentication).
+6. Run the notebook cells in order.
+
+The notebook's original database connection is environment-specific. Do not expect its server/database settings to work on another machine without changes.
+
+### Option B — Use the Included CSV Snapshot
+
+If you do not have SQL Server configured, use the included `inv.csv` file. In the notebook's data-loading section, replace the database-loading step with:
 
 ```python
-import pyodbc
 import pandas as pd
 
-conn = pyodbc.connect(
-    "DRIVER={ODBC Driver 17 for SQL Server};"
-    "SERVER=LAPPY;"
-    "DATABASE=Project;"
-    "Trusted_Connection=yes;"
-)
-
-query = "SELECT * FROM Inventory"
-df = pd.read_sql(query, conn)
+df = pd.read_csv("inv.csv")
 ```
 
-This demonstrates the ability to work with **real database connectivity** (SQL Server + ODBC + Windows Trusted Authentication) rather than only static files — a skill closer to real workplace data pipelines.
+Then continue with the cleaning and visualization steps, checking that the column names match the notebook.
 
-> **Note:** A flattened export of the same table (`inv.csv`) is included in this repo purely as a portable snapshot of the data, since the live SSMS connection can't be shared outside the original machine.
+## Repository Structure
 
----
-
-## 📊 Dataset Overview
-
-The `Inventory` table contains **120 order records** across **7 columns**:
-
-| Column | Data Type | Description | Business Significance |
-|---|---|---|---|
-| `Order_ID` | Text | Unique order identifier (e.g., `ORD001`) | Primary key for tracking each transaction |
-| `Date_order` | Date (converted from text) | Date the order was placed | Enables time-based trend analysis |
-| `Product_Name` | Text | Item ordered (10 categories: Laptop, Mouse, Keyboard, Monitor, Printer, Speaker, Scanner, Router, Webcam, SSD) | Identifies which products drive demand |
-| `Stock` | Numeric | Units remaining in inventory | Core signal for stockout / overstock risk |
-| `Orders` | Numeric | Units ordered in that transaction | Measures demand volume |
-| `Status_Order` | Text | Delivered / Pending / Shipped / Cancelled | Tracks fulfillment pipeline health |
-| `Warehouse` | Text | Fulfilling location (Pune, Mumbai, Chennai, Bengaluru) | Identifies regional workload distribution |
-
-**Data quality found:** `Stock` had 7 missing values and `Orders` had 6 missing values; no duplicate rows were present.
-
----
-
-## 🧹 Data Cleaning Steps
-
-| Step | Pandas Function | Why |
-|---|---|---|
-| Inspect structure & data types | `df.info()`, `df.dtypes` | Understand columns, types, and non-null counts before cleaning |
-| Check missing values | `df.isnull().sum()` | Quantify data quality issues |
-| Fill missing `Stock` | `df['Stock'].fillna(df['Stock'].mean())` | Mean imputation preserves the overall stock distribution |
-| Fill missing `Orders` | `df['Orders'].fillna(df['Orders'].median())` | Median is more robust to outliers for order counts |
-| Check duplicates | `df.duplicated().sum()` | Confirm no repeated order records (result: 0) |
-| Convert date column | `pd.to_datetime(df['Date_order'])` | Enables date-based operations and correct sorting |
-| Standardize category labels | `df['Warehouse'].replace('Bangalore', 'Bengaluru')` | Fixes naming inconsistency so the city is grouped correctly in analysis |
-| Statistical summary | `df.describe()` | Sanity-check ranges, means, and spread after cleaning |
-
----
-
-## 📈 Visualizations (Matplotlib + Seaborn)
-
-1. **Bar Chart — Total Orders by Warehouse**
-   `sns.barplot()` on `df.groupby('Warehouse')['Orders'].sum()` → shows which warehouse handles the highest order volume.
-
-2. **Heatmap — Correlation Matrix (Stock vs Orders)**
-   `sns.heatmap()` with `annot=True` → quantifies how strongly stock levels and order volume move together.
-
-3. **Scatter Plot — Stock vs Orders (colored by Warehouse)**
-   `sns.scatterplot(hue='Warehouse')` → visualizes the stock-to-demand relationship per warehouse.
-
-4. **Pie Chart — Percentage Share of Orders by Warehouse**
-   `plt.pie()` with `autopct='%1.1f%%'` → shows each warehouse's proportional contribution to total orders.
-
----
-
-## 💡 Key Business Insights
-
-- **Mumbai** handled the highest total order volume, followed by **Bengaluru**, with **Pune** and **Chennai** trailing.
-- **Stock and Orders show a strong positive correlation (~0.84)** — warehouses/products with higher stock levels also tend to receive higher order volumes, suggesting stocking decisions are broadly demand-aligned.
-- **Delivered** is the most common order status, followed by Pending, Shipped, and Cancelled — indicating a generally healthy fulfillment pipeline with room to reduce pending/cancelled orders.
-- Products like **Mouse, Keyboard, and Speaker** carry the highest average stock, while **Scanner and Printer** run leaner — useful for prioritizing restocking attention.
-
----
-
-## 🚧 Challenges Faced
-
-- Handling missing numeric values without distorting the overall stock/order distribution (solved via mean/median imputation).
-- Standardizing inconsistent category naming (`Bangalore` vs `Bengaluru`) before grouping.
-- Establishing a reliable ODBC connection to SQL Server from Python (driver setup, trusted authentication).
-- Choosing chart types that clearly answer specific business questions rather than just displaying data.
-
----
-
-## ▶️ How to Run
-
-```bash
-pip install pandas matplotlib seaborn pyodbc
-```
-
-1. Ensure SQL Server (SSMS) is running with the `Project` database and `Inventory` table available.
-2. Update the `SERVER` name in the connection string if needed.
-3. Open `Project.ipynb` in Jupyter Notebook and run all cells top to bottom.
-
----
-
-## 📁 Repository Structure
-
-```
-├── Project.ipynb     # Main analysis notebook (DB connection, cleaning, EDA, visuals)
-├── inv.csv           # Flattened snapshot of the Inventory table
+```text
+.
+├── Project.ipynb   # SQL extraction, cleaning, analysis, and visualizations
+├── inv.csv         # Portable snapshot of the inventory records
 └── README.md
 ```
 
----
+## Portfolio Summary
 
-## 🔮 Future Scope
+This project demonstrates a practical path from data extraction to cleaned data, exploratory analysis, and visualization. It is relevant to entry-level Data Analyst, Python Data Analyst, Reporting Analyst, and Data Quality Analyst applications.
 
-- Add automated stockout alerts based on a minimum stock threshold.
-- Build an interactive dashboard (e.g., Power BI or Streamlit) on top of the same SQL Server source.
-- Expand time-series analysis once more historical data accumulates.
+## Author
 
----
-
-## 👤 Author
-
-Developed as part of self-driven Data Analytics portfolio building, combining SQL Server connectivity with Python-based data cleaning and visualization.
+**Yash Takalkar**  
+[LinkedIn](https://www.linkedin.com/in/yash-takalkar-5a364a284/) · [GitHub](https://github.com/Yash-0608)
